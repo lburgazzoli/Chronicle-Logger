@@ -18,8 +18,9 @@
 
 package net.openhft.chronicle.logger;
 
-import net.openhft.chronicle.ExcerptAppender;
-import net.openhft.lang.io.Bytes;
+
+import net.openhft.chronicle.bytes.Bytes;
+import net.openhft.chronicle.queue.ExcerptAppender;
 
 public final class ChronicleLogHelper {
 
@@ -30,7 +31,7 @@ public final class ChronicleLogHelper {
      * @return          the ChronicleLogEvent
      */
     public static ChronicleLogEvent decodeBinary(final Bytes in) {
-        return BinaryChronicleLogEvent.read(in);
+        return null; //BinaryChronicleLogEvent.read(in);
     }
 
     /**
@@ -40,7 +41,7 @@ public final class ChronicleLogHelper {
      * @return          the ChronicleLogEvent
      */
     public static ChronicleLogEvent decodeText(final Bytes in) {
-        return TextChronicleLogEvent.read(in);
+        return null; //TextChronicleLogEvent.read(in);
     }
 
     /**
@@ -52,7 +53,9 @@ public final class ChronicleLogHelper {
      * @return              the string representation of the Throwable
      */
     public static ExcerptAppender appendStackTraceAsString(
-        final ExcerptAppender appender, final Throwable throwable, String separator, int depth) {
+            final ExcerptAppender appender, final Throwable throwable, String separator, int depth) {
+
+        /*
         final StackTraceElement[] elements = throwable.getStackTrace();
         final int nbElements = (depth == -1) ? elements.length : Math.min(depth,elements.length);
         final int sepLen = separator.length();
@@ -78,9 +81,11 @@ public final class ChronicleLogHelper {
                 break;
             }
         }
+        */
 
         return appender;
     }
 
-    private ChronicleLogHelper() {}
+    private ChronicleLogHelper() {
+    }
 }

@@ -25,7 +25,11 @@ import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * @author lburgazzoli
@@ -64,8 +68,6 @@ public class ChronicleLogConfig {
     public static final String KEY_STACK_TRACE_DEPTH = "stackTraceDepth";
     public static final String FORMAT_BINARY = "binary";
     public static final String FORMAT_TEXT = "text";
-    public static final String TYPE_VANILLA = "vanilla";
-    public static final String TYPE_INDEXED = "indexed";
     public static final String BINARY_MODE_FORMATTED = "formatted";
     public static final String BINARY_MODE_SERIALIZED = "serialized";
     public static final String PLACEHOLDER_START = "${";
@@ -88,16 +90,14 @@ public class ChronicleLogConfig {
     private static final String PID = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
 
     private final Properties properties;
-    private final IndexedLogAppenderConfig indexedConfig;
-    private final VanillaLogAppenderConfig vanillaConfig;
+    private final ChronicleLogAppenderConfig appenderConfig;
 
     /**
-     * @param   properties
+     * @param properties
      */
-    private ChronicleLogConfig(final Properties properties, final IndexedLogAppenderConfig indexedConfig, final VanillaLogAppenderConfig vanillaConfig) {
+    private ChronicleLogConfig(final Properties properties, final ChronicleLogAppenderConfig appenderConfig) {
         this.properties = properties;
-        this.indexedConfig = indexedConfig;
-        this.vanillaConfig = vanillaConfig;
+        this.appenderConfig = appenderConfig;
     }
 
     // *************************************************************************
@@ -105,11 +105,10 @@ public class ChronicleLogConfig {
     // *************************************************************************
 
     public static ChronicleLogConfig load(final Properties properties) {
-        return new ChronicleLogConfig(
-            properties,
-            loadIndexedConfig(properties),
-            loadVanillaConfig(properties)
-        );
+        final ChronicleLogAppenderConfig cfg = new ChronicleLogAppenderConfig();
+        cfg.setProperties(properties, KEY_CFG_PREFIX);
+
+        return new ChronicleLogConfig(properties, cfg);
     }
 
     /**
@@ -244,56 +243,16 @@ public class ChronicleLogConfig {
         return tmpProperties;
     }
 
-    /**
-     *
-     * @param properties
-     * @return
-     */
-    private static IndexedLogAppenderConfig loadIndexedConfig(final Properties properties) {
-        if(!TYPE_INDEXED.equalsIgnoreCase(properties.getProperty(KEY_CHRONICLE_TYPE))) {
-            return null;
-        }
-
-        final IndexedLogAppenderConfig cfg = new IndexedLogAppenderConfig();
-        cfg.setProperties(properties, KEY_CFG_PREFIX);
-
-        return cfg;
-    }
-
-    /**
-     *
-     * @param properties
-     * @return
-     */
-    private static VanillaLogAppenderConfig loadVanillaConfig(final Properties properties) {
-        if(!TYPE_VANILLA.equalsIgnoreCase(properties.getProperty(KEY_CHRONICLE_TYPE))) {
-            return null;
-        }
-
-        final VanillaLogAppenderConfig cfg = new VanillaLogAppenderConfig();
-        cfg.setProperties(properties, KEY_CFG_PREFIX);
-
-        return cfg;
-    }
-
     // *************************************************************************
     //
     // *************************************************************************
 
     /**
      *
-     * @return  the IndexedChronicle configuration
+     * @return  the Appender configuration
      */
-    public IndexedLogAppenderConfig getIndexedChronicleConfig() {
-        return this.indexedConfig;
-    }
-
-    /**
-     *
-     * @return  the VanillaChronicle configuration
-     */
-    public VanillaLogAppenderConfig getVanillaChronicleConfig() {
-        return this.vanillaConfig;
+    public ChronicleLogAppenderConfig getAppenderConfig() {
+        return this.appenderConfig;
     }
 
     /**

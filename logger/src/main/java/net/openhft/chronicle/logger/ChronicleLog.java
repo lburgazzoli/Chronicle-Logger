@@ -17,15 +17,15 @@
  */
 package net.openhft.chronicle.logger;
 
-import net.openhft.lang.model.constraints.NotNull;
+
+import org.jetbrains.annotations.NotNull;
 
 public final class ChronicleLog {
     public static final String COMMA = ", ";
     public static final String STR_FALSE = "false";
     public static final String STR_TRUE = "true";
     public static final String DEFAULT_DATE_FORMAT = "yyyy.MM.dd-HH:mm:ss.SSS";
-    
-    public static final byte VERSION = 1;
+    public static final byte VERSION = 4;
     private static final int CASE_DIFF = 'A' - 'a';
 
     // *************************************************************************

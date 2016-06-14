@@ -18,8 +18,8 @@
 
 package net.openhft.chronicle.logger;
 
-import net.openhft.lang.io.ByteStringAppender;
 
+import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -30,21 +30,20 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.openhft.chronicle.bytes.ByteStringAppender;
+
 public class TimeStampFormatter {
 
     /**
-     * Date format -> formatter cache is needed to prevent ThreadLocalMap instances pollution
-     * if date format of log appender reassigned in a loop somewhere.
+     * Date format -> formatter cache is needed to prevent ThreadLocalMap
+     * instances pollution if date format of log appender reassigned in a
+     * loop somewhere.
      *
-     * Didn't want to add a dependency to, for example, Guava for this 30-line cache
-     * with weak values. But maybe it's worth to.
+     * Didn't want to add a dependency to, for example, Guava for this 30-line
+     * cache with weak values. But maybe it's worth to.
      */
-    private static final ReferenceQueue<TimeStampFormatter> refQueue =
-        new ReferenceQueue<TimeStampFormatter>();
-
-    private static final Map<String, FormatterReference> formatters =
-        new HashMap<String, FormatterReference>();
-
+    private static final ReferenceQueue<TimeStampFormatter> refQueue = new ReferenceQueue<>();
+    private static final Map<String, FormatterReference> formatters = new HashMap<>();
     private static final FieldPosition unusedFieldPosition = new FieldPosition(0);
 
     private final MutablesCache mutablesCache;
@@ -117,7 +116,7 @@ public class TimeStampFormatter {
         mutablesCache = new MutablesCache(dateFormat);
     }
 
-    public void format(long timeStamp, ByteStringAppender appender) {
+    public void format(long timeStamp, ByteStringAppender appender) throws IOException {
         Mutables ms = mutablesCache.get();
         StringBuffer sb = ms.sb;
         sb.setLength(0);

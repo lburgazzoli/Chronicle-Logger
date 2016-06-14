@@ -15,25 +15,192 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package net.openhft.chronicle.logger;
 
-import net.openhft.chronicle.Chronicle;
-import net.openhft.lang.model.constraints.NotNull;
-import net.openhft.lang.model.constraints.Nullable;
 
 import java.beans.PropertyDescriptor;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
-public abstract class ChronicleLogAppenderConfig {
+import net.openhft.chronicle.core.threads.EventLoop;
+import net.openhft.chronicle.core.time.TimeProvider;
+import net.openhft.chronicle.queue.ChronicleQueue;
+import net.openhft.chronicle.queue.RollCycle;
+import net.openhft.chronicle.queue.RollCycles;
+import net.openhft.chronicle.queue.impl.single.SingleChronicleQueueBuilder;
+import net.openhft.chronicle.queue.impl.single.StoreRecoveryFactory;
+import net.openhft.chronicle.threads.Pauser;
+import net.openhft.chronicle.wire.WireType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-    public abstract String[] keys();
+public class ChronicleLogAppenderConfig {
 
-    public abstract Chronicle build(String path)
-        throws IOException;
+    private static final String[] KEYS = new String[] {
+        "buffered",
+        "blockSize",
+        "bufferCapacity",
+        "rollCycle",
+        "epoch",
+        "eventLoop",
+        "pauserSupplier",
+        "indexCount",
+        "indexSpacing",
+        "wireType"
+    };
+
+    private final SingleChronicleQueueBuilder builder;
+
+    public ChronicleLogAppenderConfig() {
+        // TODO: check what is the best way to create it
+        this.builder = new SingleChronicleQueueBuilder((File)null);
+    }
+
+    // *************************************************************************
+    //
+    // *************************************************************************
+
+    public boolean isBuffered() {
+        return this.builder.buffered();
+    }
+
+    public void setBuffred(boolean buffered) {
+        this.builder.buffered(buffered);
+    }
+
+    public int getBlockSize() {
+        return (int)this.builder.blockSize();
+    }
+
+    // TODO: check method parameter, should be long
+    public void setBlockSize(int blockSize) {
+        this.builder.blockSize(blockSize);
+    }
+
+    public long getBufferCapacity() {
+        return this.builder.bufferCapacity();
+    }
+
+    public void setBufferCapacity(long bufferCapacity) {
+        this.builder.bufferCapacity(bufferCapacity);
+    }
+
+    public RollCycle getRollCycle() {
+        return this.builder.rollCycle();
+    }
+
+    public void setRollCycle(RollCycle rollCycle) {
+        this.builder.rollCycle(rollCycle);
+    }
+
+    public void setRollCycle(String rollCycle) {
+        this.builder.rollCycle(RollCycles.valueOf(rollCycle));
+    }
+
+    public long getEpoch() {
+        return this.builder.epoch();
+    }
+
+    public void setEpoch(long epoch) {
+        this.builder.epoch(epoch);
+    }
+
+    public EventLoop getEventLoop() {
+        return this.builder.eventLoop();
+    }
+
+    public void setEventLoop(EventLoop eventLoop) {
+        this.builder.eventLoop(eventLoop);
+    }
+
+    public Supplier<Pauser> getPauserSupplier() {
+        return this.builder.pauserSupplier();
+    }
+
+    public void setPauserSupplier(Supplier<Pauser> pauserSupplier) {
+        this.builder.pauserSupplier(pauserSupplier);
+    }
+
+    public int getIndexCount() {
+        return this.builder.indexCount();
+    }
+
+    public void setIndexCount(int indexCount) {
+        this.builder.indexCount(indexCount);
+    }
+
+    public int getIndexSpacing() {
+        return this.builder.indexSpacing();
+    }
+
+    public void setIndexSpacing(int indexSpacing) {
+        this.builder.indexSpacing(indexSpacing);
+    }
+
+    public TimeProvider getTimeProvider() {
+        return this.builder.timeProvider();
+    }
+
+    public void setTimeProvider(TimeProvider timeProvider) {
+        this.builder.timeProvider(timeProvider);
+    }
+
+    public void setTimeout(long timeout, TimeUnit timeUnit) {
+        setTimeout(timeUnit.toMillis(timeout));
+    }
+
+    public void setTimeout(long timeout) {
+        this.builder.timeoutMS(timeout);
+    }
+
+    public long getTimeout() {
+        return this.builder.timeoutMS();
+    }
+
+    public StoreRecoveryFactory getStoreRecoveryFactory() {
+        return this.builder.recoverySupplier();
+    }
+
+    public void setStoreRecoveryFactory(StoreRecoveryFactory storeRecoveryFactory) {
+        this.builder.recoverySupplier(storeRecoveryFactory);
+    }
+
+    public WireType getWireType() {
+        return this.builder.wireType();
+    }
+
+    public void setWireType(WireType wireType) {
+        this.builder.wireType(wireType);
+    }
+
+    // *************************************************************************
+    //
+    // *************************************************************************
+
+    public String[] keys() {
+        return KEYS;
+    }
+
+    public ChronicleQueue build(String path) throws IOException {
+        return new SingleChronicleQueueBuilder(path)
+            .buffered(this.isBuffered())
+            .blockSize(this.getBlockSize())
+            .bufferCapacity(this.getBufferCapacity())
+            .rollCycle(this.getRollCycle())
+            .epoch(this.getEpoch())
+            .pauserSupplier(this.getPauserSupplier())
+            .indexCount(this.getIndexCount())
+            .indexSpacing(this.getIndexSpacing())
+            .wireType(this.getWireType())
+            .build();
+    }
+
+
 
     public void setProperties(@NotNull final Properties properties, @Nullable final String prefix) {
         for (final Map.Entry<Object, Object> entry : properties.entrySet()) {
@@ -59,13 +226,10 @@ public abstract class ChronicleLogAppenderConfig {
             if(type != null && propValue != null && !propValue.isEmpty()) {
                 if (type == int.class) {
                     method.invoke(this, Integer.parseInt(propValue));
-
                 } else if (type == long.class) {
                     method.invoke(this, Long.parseLong(propValue));
-
                 } else if (type == boolean.class) {
                     method.invoke(this, Boolean.parseBoolean(propValue));
-
                 } else if (type == String.class) {
                     method.invoke(this, propValue);
                 }

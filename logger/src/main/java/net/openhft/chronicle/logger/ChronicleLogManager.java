@@ -17,13 +17,11 @@
  */
 package net.openhft.chronicle.logger;
 
-import net.openhft.chronicle.Chronicle;
-import net.openhft.chronicle.IndexedChronicle;
-
-import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import net.openhft.chronicle.queue.ChronicleQueue;
 
 public class ChronicleLogManager {
     private ChronicleLogConfig cfg;
@@ -93,32 +91,7 @@ public class ChronicleLogManager {
         if (path != null) {
             ChronicleLogWriter appender = writers.get(path);
             if (appender == null) {
-                final Integer stDepth = cfg.getInteger(ChronicleLogConfig.KEY_STACK_TRACE_DEPTH);
-                final String type = cfg.getString(name, ChronicleLogConfig.KEY_TYPE);
-
-                if (!isSimple(name)) {
-                    if (isBinary(name)) {
-                        appender = new ChronicleLogWriters.BinaryWriter(
-                            newChronicle(type, path, name)
-                        );
-
-                    } else if (isText(name)) {
-                        appender = new ChronicleLogWriters.TextWriter(
-                            newChronicle(type, path, name),
-                            ChronicleLogConfig.DEFAULT_DATE_FORMAT,
-                            stDepth
-                        );
-                    }
-                } else {
-                    appender = new ChronicleLogWriters.SimpleWriter(
-                        System.out
-                    );
-                }
-
-                if (appender.getChronicle() instanceof IndexedChronicle) {
-                    appender = new ChronicleLogWriters.SynchronizedWriter(appender);
-                }
-
+                appender = new ChronicleLogWriter(newChronicle(path, name));
                 this.writers.put(path, appender);
             }
 
@@ -137,54 +110,19 @@ public class ChronicleLogManager {
     }
 
     /**
-     * @param type
      * @param path
      * @param name
      * @return
      * @throws java.io.IOException
      */
-    private Chronicle newChronicle(String type, String path, String name) throws IOException  {
-        if (ChronicleLogConfig.TYPE_INDEXED.equalsIgnoreCase(type)) {
-            return newIndexedChronicle(path, name);
-
-        } else if (ChronicleLogConfig.TYPE_VANILLA.equalsIgnoreCase(type)) {
-            return newVanillaChronicle(path, name);
-        }
-
-        throw new IllegalArgumentException("type should be indexed or vanilla");
-    }
-
-    /**
-     * Make a VanillaChronicle with default configuration;
-     *
-     * @param path
-     * @param name #param synchronous
-     * @return
-     */
-    private Chronicle newVanillaChronicle(String path, String name) throws IOException {
-        final Chronicle chronicle = this.cfg.getVanillaChronicleConfig().build(path);
+    private ChronicleQueue newChronicle(String path, String name) throws IOException  {
+        final ChronicleQueue chronicle = this.cfg.getAppenderConfig().build(path);
 
         if (!cfg.getBoolean(name, ChronicleLogConfig.KEY_APPEND, true)) {
             chronicle.clear();
         }
 
         return chronicle;
-    }
-
-    /**
-     * Make an IndexedChronicle with default configuration;
-     *
-     * @param path
-     * @param name
-     * @return
-     */
-    private Chronicle newIndexedChronicle(String path, String name) throws IOException {
-        if (!cfg.getBoolean(name, ChronicleLogConfig.KEY_APPEND, true)) {
-            new File(path + ".data").delete();
-            new File(path + ".index").delete();
-        }
-
-        return this.cfg.getIndexedChronicleConfig().build(path);
     }
 
     // *************************************************************************
@@ -203,7 +141,6 @@ public class ChronicleLogManager {
         private static final ChronicleLogManager INSTANCE = new ChronicleLogManager();
         
         private Holder() {
-            
         }
     }
 }

@@ -18,7 +18,8 @@
 
 package net.openhft.chronicle.logger;
 
-import net.openhft.lang.io.Bytes;
+
+import net.openhft.chronicle.bytes.Bytes;
 
 public interface ChronicleLogReader {
     void read(final Bytes bytes);
