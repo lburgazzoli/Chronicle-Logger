@@ -28,21 +28,20 @@ import net.openhft.chronicle.wire.WireKey;
 import org.jetbrains.annotations.NotNull;
 
 public class ChronicleLogWriter implements Closeable {
-    public static enum EntryKey implements WireKey {
+    public static final Object[] EMPTY_OBJECT_ARRY = new Object[0];
+
+    public enum EntryKey implements WireKey {
         LEVEL,
         TIMESTAMP,
         THREAD_NAME,
         LOGGER_NAME,
         MESSAGE,
-        NBARGS,
         ARGS,
-        HASERROR,
         EXCEPTION,
     }
 
     private final ChronicleQueue chronicleQueue;
     private final ThreadLocal<WeakReference<ExcerptAppender>> cache;
-
 
     public ChronicleLogWriter(@NotNull final ChronicleQueue chronicleQueue) {
         this.chronicleQueue = chronicleQueue;
@@ -69,9 +68,7 @@ public class ChronicleLogWriter implements Closeable {
                 .write(EntryKey.THREAD_NAME).text(threadName)
                 .write(EntryKey.LOGGER_NAME).text(loggerName)
                 .write(EntryKey.MESSAGE).text(message)
-                .write(EntryKey.NBARGS).array(
-                    w -> { w.object(null); },
-                    Object.class)
+                .write(EntryKey.ARGS).object(Object[].class, EMPTY_OBJECT_ARRY)
                 .write(EntryKey.EXCEPTION).throwable(null)
         );
     }
@@ -89,7 +86,7 @@ public class ChronicleLogWriter implements Closeable {
                 .write(EntryKey.THREAD_NAME).text(threadName)
                 .write(EntryKey.LOGGER_NAME).text(loggerName)
                 .write(EntryKey.MESSAGE).text(message)
-                .write(EntryKey.NBARGS).object(Object[].class, new Object[0])
+                .write(EntryKey.ARGS).object(Object[].class, EMPTY_OBJECT_ARRY)
                 .write(EntryKey.EXCEPTION).throwable(throwable)
         );
     }
@@ -108,7 +105,7 @@ public class ChronicleLogWriter implements Closeable {
                 .write(EntryKey.THREAD_NAME).text(threadName)
                 .write(EntryKey.LOGGER_NAME).text(loggerName)
                 .write(EntryKey.MESSAGE).text(message)
-                .write(EntryKey.NBARGS).object(Object[].class, new Object[] { arg1 })
+                .write(EntryKey.ARGS).array(w -> w.object(arg1), Object.class)
                 .write(EntryKey.EXCEPTION).throwable(throwable)
         );
     }
@@ -128,7 +125,7 @@ public class ChronicleLogWriter implements Closeable {
                 .write(EntryKey.THREAD_NAME).text(threadName)
                 .write(EntryKey.LOGGER_NAME).text(loggerName)
                 .write(EntryKey.MESSAGE).text(message)
-                .write(EntryKey.NBARGS).object(Object[].class, new Object[] { arg1, arg2 })
+                .write(EntryKey.ARGS).array(w -> { w.object(arg1); w.object(arg2); }, Object.class)
                 .write(EntryKey.EXCEPTION).throwable(throwable)
         );
     }
@@ -147,8 +144,7 @@ public class ChronicleLogWriter implements Closeable {
                 .write(EntryKey.THREAD_NAME).text(threadName)
                 .write(EntryKey.LOGGER_NAME).text(loggerName)
                 .write(EntryKey.MESSAGE).text(message)
-                .write(EntryKey.NBARGS).int8(args.length)
-                .write(EntryKey.NBARGS).object(Object[].class, args)
+                .write(EntryKey.ARGS).object(Object[].class, args)
                 .write(EntryKey.EXCEPTION).throwable(throwable)
         );
     }
